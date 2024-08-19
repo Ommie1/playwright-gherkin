@@ -1,11 +1,9 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
-const { chromium } = require('playwright');
 const { PageObjectManager } = require('../page-objects/PageObjectManager');
 const { faker } = require('@faker-js/faker');
 require('dotenv').config();
+const { setup, teardown } = require('../utils');
 
-let browser;
-let context;
 let page;
 let pageObjectManager;
 
@@ -17,13 +15,12 @@ const password = faker.internet.password();
 
 Given('I am on the shop home page', async function () {
   try {
-    browser = await chromium.launch({ headless: false });
-    context = await browser.newContext();
-    page = await context.newPage();
+    const { page: newPage } = await setup();
+    page = newPage;
     pageObjectManager = new PageObjectManager(page);
     await pageObjectManager.getShopHomePage().gotoSite();
   } catch (error) {
-    console.error("Failed to open site:", error);
+    console.error('Failed to open site:', error);
     throw error;
   }
 });
@@ -32,7 +29,7 @@ When('I go to the registration page', async function () {
   try {
     await pageObjectManager.getShopHomePage().gotoRegistrationPage();
   } catch (error) {
-    console.error("Failed to navigate to registration page:", error);
+    console.error('Failed to navigate to registration page:', error);
     throw error;
   }
 });
@@ -41,7 +38,7 @@ When('I register with valid details', async function () {
   try {
     await pageObjectManager.getRegistrationPage().userRegistration(firstName, lastName, email, password);
   } catch (error) {
-    console.error("Failed to register user:", error);
+    console.error('Failed to register user:', error);
     throw error;
   }
 });
@@ -51,14 +48,9 @@ Then('I should see a confirmation on the admin page', async function () {
     const shopData = require('../test-data/shopData.json');
     await pageObjectManager.getAdminPage().verifyUserRegistration(shopData.adminPageHeadingTxt);
   } catch (error) {
-    console.error("Failed to verify user registration:", error);
+    console.error('Failed to verify user registration:', error);
     throw error;
   } finally {
-    if (context) {
-      await context.close();
-    }
-    if (browser) {
-      await browser.close();
-    }
+    await teardown(); // Ensure teardown is called
   }
 });
